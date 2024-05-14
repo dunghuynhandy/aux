@@ -732,19 +732,30 @@ class LVISV1Dataset(LVISDataset):
         self.cat_ids = [i for i in range(1, len(self.CLASSES)+1)]
         self.cat2label = {cat_id: i for i, cat_id in enumerate(self.cat_ids)}
         
-        # self.img_ids = self.coco.get_img_ids()
         
         import json
-        with open("/home/ngoc/githubs/aux/image_sample.json", 'r') as file:
-            random_image = json.load(file)
-        random_image = [{"image_id": idx, 'filename': item} for idx, item in enumerate(random_image)]
-        self.img_ids = [item["image_id"] for item in random_image]
+        with open("/home/storage/aux/LlavaFalcon_1k_images.json", 'r') as file:
+            images = json.load(file)
+        images = [item["image"] for item in images]
+        images = list(dict.fromkeys(images))
+        images = [{"id": idx, 'filename': item} for idx, item in enumerate(images)]
+        with open("image_mapping.json", 'w') as file:
+            json.dump(images, file)
+    
+        self.img_ids = [item["id"] for item in images]
+        data_infos = []
+        
+        # import json
+        # with open("/home/ngoc/githubs/aux/image_sample.json", 'r') as file:
+        #     random_image = json.load(file)
+        # random_image = [{"image_id": idx, 'filename': item} for idx, item in enumerate(random_image)]
+        # self.img_ids = [item["image_id"] for item in random_image]
         
         data_infos = []
         
         for i in self.img_ids[:32]:
             # info = self.coco.load_imgs([i])[0]
-            info = random_image[i]
+            info = images[i]
             # coco_url is used in LVISv1 instead of file_name
             # e.g. http://images.cocodataset.org/train2017/000000391895.jpg
             # train/val split in specified in url
