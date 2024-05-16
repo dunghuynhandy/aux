@@ -13,7 +13,7 @@ from terminaltables import AsciiTable
 from .builder import DATASETS
 from .coco import CocoDataset
 
-
+import torch.distributed as dist
 @DATASETS.register_module()
 class LVISV05Dataset(CocoDataset):
 
@@ -731,15 +731,15 @@ class LVISV1Dataset(LVISDataset):
         # self.cat_ids = self.coco.get_cat_ids()
         self.cat_ids = [i for i in range(1, len(self.CLASSES)+1)]
         self.cat2label = {cat_id: i for i, cat_id in enumerate(self.cat_ids)}
-        
-        
         import json
-        with open("/home/storage/aux/LlavaFalcon_1k_images.json", 'r') as file:
+        with open("/mnt/datasets/llava_data/llava_second_stage/llava_v1_5_mix665k.json", 'r') as file:
             images = json.load(file)
-        images = [item["image"] for item in images]
-        images = list(dict.fromkeys(images))
+        images = [item["image"] for item in images if "image" in item]
+        images = list(dict.fromkeys(images))[200000:]
         images = [{"id": idx, 'filename': item} for idx, item in enumerate(images)]
-        with open("image_mapping.json", 'w') as file:
+        
+        rank = dist.get_rank()
+        with open(f"image_mapping_{rank}.json", 'w') as file:
             json.dump(images, file)
     
         self.img_ids = [item["id"] for item in images]
@@ -753,7 +753,7 @@ class LVISV1Dataset(LVISDataset):
         
         data_infos = []
         
-        for i in self.img_ids[:32]:
+        for i in self.img_ids:
             # info = self.coco.load_imgs([i])[0]
             info = images[i]
             # coco_url is used in LVISv1 instead of file_name

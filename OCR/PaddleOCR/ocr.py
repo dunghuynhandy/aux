@@ -64,8 +64,15 @@ class OCRDataset(Dataset):
         with open(json_file, 'r') as file:
             self.images = json.load(file)
         
+        
         self.images = [item["image"] for item in self.images if "image" in item]
         self.images = list(dict.fromkeys(self.images))
+        
+        with open("/home/ngoc/githubs/aux/OCR/PaddleOCR/bkacup/ocr_second_step_part_1.json", 'r') as file:
+            processed_images = json.load(file)
+        processed_images = set([item["img"] for item in processed_images])
+        self.images = [image for image in self.images if image not in processed_images ]
+        
         print(f"there are {len(self.images)} images")
         self.image_path = image_path
         
@@ -96,6 +103,8 @@ def collect_result(world_size):
             for line in file:
                 json_object = json.loads(line)
                 result.append(json_object)
+    
+    
     print(f"the total of predictions: {len(result)}")
     unique_id = []
     for item in result:
@@ -165,11 +174,11 @@ def main(args):
                     json.dump(item, file)
                     file.write('\n')
     dist.barrier()
-    if rank == 0:
-        final_result = collect_result(4)
-        output_path = os.path.join(args.output_path, "final_result_PaddleOCR.json") 
-        with open(output_path, 'w') as file:
-            json.dump(final_result, file, indent=4)
+    # if rank == 0:
+    #     final_result = collect_result(4)
+    #     output_path = os.path.join(args.output_path, "final_result_PaddleOCR_first_stage.json") 
+    #     with open(output_path, 'w') as file:
+    #         json.dump(final_result, file, indent=4)
 
 
 

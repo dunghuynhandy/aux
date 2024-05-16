@@ -188,7 +188,7 @@ def main():
         init_dist(args.launcher, **cfg.dist_params)
 
     test_dataloader_default_args = dict(
-        samples_per_gpu=2, workers_per_gpu=2, dist=distributed, shuffle=False)
+        samples_per_gpu=2, workers_per_gpu=4, dist=distributed, shuffle=False)
 
     # in case the test dataset is concatenated
     if isinstance(cfg.data.test, dict):
