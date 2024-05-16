@@ -1,0 +1,1 @@
+python demo.py --config-file configs/ovseg_swinB_vitL_demo.yaml  --input '/mnt/datasets/llava_data/llava_second_stage/coco/train2017/000000052846.jpg' --output ./pred --opts MODEL.WEIGHTS ovseg_swinbase_vitL14_ft_mpt.pth
