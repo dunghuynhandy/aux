@@ -238,22 +238,44 @@ class CocoDataset(CustomDataset):
         return json_results
 
     def _det2json(self, results):
-        """Convert detection results to COCO json style."""
-        
-        json_results = []
+        label_mapping = {}
+        i = 0
+        with open('/home/ngoc/githubs/aux/object_detection/labels_setup/ivis_labels.txt', 'r') as file:
+            for line in file:
+                label = line.strip()
+                label_mapping[i] = label
+                i+=1
+        del i
+        json_results = dict()
         for idx in range(len(self)):
             img_id = self.img_ids[idx]
-            
             result = results[idx]
+            data = {"bboxes": [], "scores": [], "labels":[]}
             for label in range(len(result)):
                 bboxes = result[label]
-                for i in range(bboxes.shape[0]):
-                    data = dict()
-                    data['image_id'] = img_id
-                    data['bbox'] = self.xyxy2xywh(bboxes[i])
-                    data['score'] = float(bboxes[i][4])
-                    data['category_id'] = self.cat_ids[label]
-                    json_results.append(data)
+                if len(bboxes) > 0:
+                    for i in range(bboxes.shape[0]):
+                        if float(bboxes[i][4]) > 0.3:
+                            data['bboxes'].append(bboxes[i][:4].tolist()) #self.xyxy2xywh(bboxes[i])
+                            data['scores'].append(float(bboxes[i][4]))
+                            data['labels'].append(label_mapping[self.cat_ids[label]-1])
+            json_results[img_id] = data
+        """Convert detection results to COCO json style."""
+        
+        # json_results = []
+        # for idx in range(len(self)):
+        #     img_id = self.img_ids[idx]
+            
+        #     result = results[idx]
+        #     for label in range(len(result)):
+        #         bboxes = result[label]
+        #         for i in range(bboxes.shape[0]):
+        #             data = dict()
+        #             data['image_id'] = img_id
+        #             data['bbox'] = self.xyxy2xywh(bboxes[i])
+        #             data['score'] = float(bboxes[i][4])
+        #             data['category_id'] = self.cat_ids[label]
+        #             json_results.append(data)
         return json_results
 
     def _segm2json(self, results):
@@ -315,8 +337,9 @@ class CocoDataset(CustomDataset):
         """
         result_files = dict()
         if isinstance(results[0], list):
+            print(self.hf_dataset)
             json_results = self._det2json(results)
-            result_files['bbox'] = f'{outfile_prefix}.bbox.json'
+            result_files['bbox'] = f'{outfile_prefix}{self.hf_dataset}.bbox.json'
             result_files['proposal'] = f'{outfile_prefix}.bbox.json'
             mmcv.dump(json_results, result_files['bbox'])
         elif isinstance(results[0], tuple):

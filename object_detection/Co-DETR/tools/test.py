@@ -28,6 +28,7 @@ def parse_args():
         description='MMDet test (and eval) a model')
     parser.add_argument('config', help='test config file path')
     parser.add_argument('checkpoint', help='checkpoint file')
+    parser.add_argument('--hf-dataset', help='hf-dataset')
     parser.add_argument(
         '--work-dir',
         help='the directory to save the file containing evaluation metrics')
@@ -218,6 +219,7 @@ def main():
         json_file = osp.join(args.work_dir, f'eval_{timestamp}.json')
 
     # build the dataloader
+    cfg.data.test.hf_dataset = args.hf_dataset
     dataset = build_dataset(cfg.data.test)
     data_loader = build_dataloader(dataset, **test_loader_cfg)
 

@@ -27,8 +27,6 @@ if platform.system() != 'Windows':
 
 DATASETS = Registry('dataset')
 PIPELINES = Registry('pipeline')
-
-
 def _concat_dataset(cfg, default_args=None):
     from .dataset_wrappers import ConcatDataset
     ann_files = cfg['ann_file']
@@ -57,8 +55,9 @@ def _concat_dataset(cfg, default_args=None):
 
 
 def build_dataset(cfg, default_args=None):
+    
     from .dataset_wrappers import (ClassBalancedDataset, ConcatDataset,
-                                   MultiImageMixDataset, RepeatDataset)
+                                MultiImageMixDataset, RepeatDataset)
     if isinstance(cfg, (list, tuple)):
         dataset = ConcatDataset([build_dataset(c, default_args) for c in cfg])
     elif cfg['type'] == 'ConcatDataset':
@@ -81,9 +80,11 @@ def build_dataset(cfg, default_args=None):
             cp_cfg.pop('filter_empty_gt')
         dataset = MultiImageMixDataset(**cp_cfg)
     elif isinstance(cfg.get('ann_file'), (list, tuple)):
+        
         dataset = _concat_dataset(cfg, default_args)
     else:
         dataset = build_from_cfg(cfg, DATASETS, default_args)
+        
 
     return dataset
 

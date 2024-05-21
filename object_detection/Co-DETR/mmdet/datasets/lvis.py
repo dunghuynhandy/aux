@@ -732,19 +732,27 @@ class LVISV1Dataset(LVISDataset):
         self.cat_ids = [i for i in range(1, len(self.CLASSES)+1)]
         self.cat2label = {cat_id: i for i, cat_id in enumerate(self.cat_ids)}
         import json
-        with open("/mnt/datasets/llava_data/llava_second_stage/llava_v1_5_mix665k.json", 'r') as file:
-            images = json.load(file)
-        images = [item["image"] for item in images if "image" in item]
-        images = list(dict.fromkeys(images))[200000:]
-        images = [{"id": idx, 'filename': item} for idx, item in enumerate(images)]
-        
-        rank = dist.get_rank()
-        with open(f"image_mapping_{rank}.json", 'w') as file:
-            json.dump(images, file)
-    
+        import sys
+        from datasets import load_dataset
+
+        def add_idx_column(example, idx):
+            example['id'] = idx
+            return example
+        co_dataset = load_dataset("HuggingFaceM4/the_cauldron", self.hf_dataset)
+        co_dataset['train'] = co_dataset['train'].map(add_idx_column, with_indices=True)
+        if dist.rank == 0:
+            co_dataset.save_to_disk(f'./{self.hf_dataset}_det', max_shard_size="100MB")
+            print("done")
+        dist.barrier()
+        images = [{"id": item["id"], 'image':item["images"][0]} for item in co_dataset["train"]][:16]
         self.img_ids = [item["id"] for item in images]
-        data_infos = []
         
+
+        # rank = dist.get_rank()
+        # with open(f"image_mapping_{rank}.json", 'w') as file:
+        #     json.dump(images, file)
+        # self.img_ids = [item["id"] for item in images]
+        # data_infos = []
         # import json
         # with open("/home/ngoc/githubs/aux/image_sample.json", 'r') as file:
         #     random_image = json.load(file)
@@ -759,8 +767,6 @@ class LVISV1Dataset(LVISDataset):
             # coco_url is used in LVISv1 instead of file_name
             # e.g. http://images.cocodataset.org/train2017/000000391895.jpg
             # train/val split in specified in url
-            # info['filename'] = info['coco_url'].replace(
-            #     'http://images.cocodataset.org/', '')
-            
+            info['filename'] = info["id"]
             data_infos.append(info)
         return data_infos

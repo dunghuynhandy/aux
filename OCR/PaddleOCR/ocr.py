@@ -64,14 +64,13 @@ class OCRDataset(Dataset):
         with open(json_file, 'r') as file:
             self.images = json.load(file)
         
+        self.images = self.images["data"]
+        # import ipdb; ipdb.set_trace()
+        self.images = [item["image_id"]+".jpg" for item in self.images]
+        # self.images = [item["image"] for item in self.images if "image" in item]
         
-        self.images = [item["image"] for item in self.images if "image" in item]
         self.images = list(dict.fromkeys(self.images))
-        
-        with open("/home/ngoc/githubs/aux/OCR/PaddleOCR/bkacup/ocr_second_step_part_1.json", 'r') as file:
-            processed_images = json.load(file)
-        processed_images = set([item["img"] for item in processed_images])
-        self.images = [image for image in self.images if image not in processed_images ]
+
         
         print(f"there are {len(self.images)} images")
         self.image_path = image_path

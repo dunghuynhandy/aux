@@ -23,5 +23,5 @@ data = dict(
         type=dataset_type,
         # ann_file=data_root + 'annotations/lvis_v1_val.json',
         ann_file=data_root + 'annotations/instances_val2017.json',
-        img_prefix='/mnt/datasets/llava_data/llava_second_stage/'))
+        img_prefix='/home/ngoc/githubs/aux/object_detection/Co-DETR/data/text_vqa/test_images'))
 evaluation = dict(metric=['bbox', 'segm'])

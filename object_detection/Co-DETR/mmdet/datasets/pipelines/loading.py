@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import os.path as osp
-
+from PIL import Image, ImageOps
 import mmcv
 import numpy as np
 import pycocotools.mask as maskUtils
@@ -13,7 +13,61 @@ try:
 except ImportError:
     rgb2id = None
 
+def _pillow2array(img,
+                  flag: str = 'color',
+                  channel_order: str = 'bgr') -> np.ndarray:
+    """Convert a pillow image to numpy array.
 
+    Args:
+        img (:obj:`PIL.Image.Image`): The image loaded using PIL
+        flag (str): Flags specifying the color type of a loaded image,
+            candidates are 'color', 'grayscale' and 'unchanged'.
+            Default to 'color'.
+        channel_order (str): The channel order of the output image array,
+            candidates are 'bgr' and 'rgb'. Default to 'bgr'.
+
+    Returns:
+        np.ndarray: The converted numpy array
+    """
+    channel_order = channel_order.lower()
+    if channel_order not in ['rgb', 'bgr']:
+        raise ValueError('channel order must be either "rgb" or "bgr"')
+
+    if flag == 'unchanged':
+        array = np.array(img)
+        if array.ndim >= 3 and array.shape[2] >= 3:  # color image
+            array[:, :, :3] = array[:, :, (2, 1, 0)]  # RGB to BGR
+    else:
+        # Handle exif orientation tag
+        if flag in ['color', 'grayscale']:
+            img = ImageOps.exif_transpose(img)
+        # If the image mode is not 'RGB', convert it to 'RGB' first.
+        if img.mode != 'RGB':
+            if img.mode != 'LA':
+                # Most formats except 'LA' can be directly converted to RGB
+                img = img.convert('RGB')
+            else:
+                # When the mode is 'LA', the default conversion will fill in
+                #  the canvas with black, which sometimes shadows black objects
+                #  in the foreground.
+                #
+                # Therefore, a random color (124, 117, 104) is used for canvas
+                img_rgba = img.convert('RGBA')
+                img = Image.new('RGB', img_rgba.size, (124, 117, 104))
+                img.paste(img_rgba, mask=img_rgba.split()[3])  # 3 is alpha
+        if flag in ['color', 'color_ignore_orientation']:
+            array = np.array(img)
+            if channel_order != 'rgb':
+                array = array[:, :, ::-1]  # RGB to BGR
+        elif flag in ['grayscale', 'grayscale_ignore_orientation']:
+            img = img.convert('L')
+            array = np.array(img)
+        else:
+            raise ValueError(
+                'flag must be "color", "grayscale", "unchanged", '
+                f'"color_ignore_orientation" or "grayscale_ignore_orientation"'
+                f' but got {flag}')
+    return array
 @PIPELINES.register_module()
 class LoadImageFromFile:
     """Load an image from file.
@@ -54,23 +108,34 @@ class LoadImageFromFile:
         Returns:
             dict: The dict contains loaded image and meta information.
         """
-
         if self.file_client is None:
             self.file_client = mmcv.FileClient(**self.file_client_args)
 
-        if results['img_prefix'] is not None:
-            filename = osp.join(results['img_prefix'],
-                                results['img_info']['filename'])
-        else:
-            filename = results['img_info']['filename']
-
-        img_bytes = self.file_client.get(filename)
-        img = mmcv.imfrombytes(
-            img_bytes, flag=self.color_type, channel_order=self.channel_order)
+        # if results['img_prefix'] is not None:
+        #     filename = osp.join(results['img_prefix'],
+        #                         results['img_info']['filename'])
+        # else:
+        #     filename = results['img_info']['filename']
+    
+        # img_bytes = self.file_client.get(filename)
+        
+        img = results['img_info']['image']
+        img = _pillow2array(img,self.color_type, self.channel_order )
+        # img_rgba = img.convert('RGBA')
+        # # img = mmcv.imfrombytes(
+        # #     img_bytes, flag=self.color_type, channel_order=self.channel_order, backend="pillow")
+        # img = Image.new('RGB', img_rgba.size, (124, 117, 104))
+        # img.paste(img_rgba, mask=img_rgba.split()[3])  # 3 is alpha
+        
+        # if self.color_type in ['color', 'color_ignore_orientation']:
+        #     array = np.array(img)
+        #     if self.channel_order != 'rgb':
+        #         array = array[:, :, ::-1]
+        # img = array
         if self.to_float32:
             img = img.astype(np.float32)
 
-        results['filename'] = filename
+        results['filename'] = results['img_info']['filename']
         results['ori_filename'] = results['img_info']['filename']
         results['img'] = img
         results['img_shape'] = img.shape

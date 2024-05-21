@@ -59,6 +59,7 @@ class CustomDataset(Dataset):
     def __init__(self,
                  ann_file,
                  pipeline,
+                 hf_dataset,
                  classes=None,
                  data_root=None,
                  img_prefix='',
@@ -67,8 +68,10 @@ class CustomDataset(Dataset):
                  proposal_file=None,
                  test_mode=False,
                  filter_empty_gt=True,
-                 file_client_args=dict(backend='disk')):
+                 file_client_args=dict(backend='disk'),
+                 ):
         self.ann_file = ann_file
+        self.hf_dataset = hf_dataset
         self.data_root = data_root
         self.img_prefix = img_prefix
         self.seg_prefix = seg_prefix
