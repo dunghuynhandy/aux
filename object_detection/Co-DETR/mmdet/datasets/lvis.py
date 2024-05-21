@@ -741,11 +741,10 @@ class LVISV1Dataset(LVISDataset):
         co_dataset = load_dataset("HuggingFaceM4/the_cauldron", self.hf_dataset)
         co_dataset['train'] = co_dataset['train'].map(add_idx_column, with_indices=True)
         if dist.rank == 0:
-            co_dataset.save_to_disk(f'./{self.hf_dataset}_det', max_shard_size="100MB")
+            co_dataset.save_to_disk(f'./{self.hf_dataset}_det', max_shard_size="500MB")
             print("done")
         dist.barrier()
-        images = [{"id": item["id"], 'image':item["images"][0]} for item in co_dataset["train"]][:16]
-        self.img_ids = [item["id"] for item in images]
+        images = [{"id": item["id"], 'image':item["images"][0]} for item in co_dataset["train"]]
         
 
         # rank = dist.get_rank()
