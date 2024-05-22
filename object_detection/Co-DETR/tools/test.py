@@ -29,6 +29,8 @@ def parse_args():
     parser.add_argument('config', help='test config file path')
     parser.add_argument('checkpoint', help='checkpoint file')
     parser.add_argument('--hf-dataset', help='hf-dataset')
+    parser.add_argument('--cache-dir', help='cache-dir')
+    parser.add_argument('--custom-dataset-save-path', help='custom-dataset-save-path')
     parser.add_argument(
         '--work-dir',
         help='the directory to save the file containing evaluation metrics')
@@ -220,6 +222,8 @@ def main():
 
     # build the dataloader
     cfg.data.test.hf_dataset = args.hf_dataset
+    cfg.data.test.cache_dir= args.cache_dir
+    cfg.data.test.custom_dataset_save_path= args.custom_dataset_save_path
     dataset = build_dataset(cfg.data.test)
     data_loader = build_dataloader(dataset, **test_loader_cfg)
 

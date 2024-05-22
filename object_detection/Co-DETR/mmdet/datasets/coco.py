@@ -238,6 +238,7 @@ class CocoDataset(CustomDataset):
         return json_results
 
     def _det2json(self, results):
+        """Convert detection results to COCO json style."""
         label_mapping = {}
         i = 0
         with open('/home/ngoc/githubs/aux/object_detection/labels_setup/ivis_labels.txt', 'r') as file:
@@ -258,9 +259,10 @@ class CocoDataset(CustomDataset):
                         if float(bboxes[i][4]) > 0.3:
                             data['bboxes'].append(bboxes[i][:4].tolist()) #self.xyxy2xywh(bboxes[i])
                             data['scores'].append(float(bboxes[i][4]))
+                            
                             data['labels'].append(label_mapping[self.cat_ids[label]-1])
-            json_results[img_id] = data
-        """Convert detection results to COCO json style."""
+            json_results[self.result_mapping[img_id]] = data
+        
         
         # json_results = []
         # for idx in range(len(self)):
