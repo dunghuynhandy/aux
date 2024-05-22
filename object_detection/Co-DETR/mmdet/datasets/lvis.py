@@ -19,7 +19,7 @@ import zlib
 import torch.distributed as dist
 @DATASETS.register_module()
 
-def encode_image_to_base64_compressed(image, output_size=(256, 256), quality=256):
+def encode_image_to_base64_compressed(image, output_size=(10, 256), quality=512):
     image_copy = image.copy()
     if image_copy.mode == 'RGBA':
         image_copy = image_copy.convert('RGB')
