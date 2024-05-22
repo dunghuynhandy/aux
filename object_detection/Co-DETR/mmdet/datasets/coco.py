@@ -260,6 +260,7 @@ class CocoDataset(CustomDataset):
                             data['scores'].append(float(bboxes[i][4]))
                             data['labels'].append(label_mapping[self.cat_ids[label]-1])
             json_results[img_id] = data
+        print(f" ====================== {len(self)}::: {len(json_results.keys())} ====================== ")
         """Convert detection results to COCO json style."""
         
         # json_results = []

@@ -29,6 +29,7 @@ def parse_args():
     parser.add_argument('config', help='test config file path')
     parser.add_argument('checkpoint', help='checkpoint file')
     parser.add_argument('--hf-dataset', help='hf-dataset')
+    parser.add_argument('--cache-dir', help='hf-dataset-cache')
     parser.add_argument(
         '--work-dir',
         help='the directory to save the file containing evaluation metrics')
@@ -209,6 +210,8 @@ def main():
         **test_dataloader_default_args,
         **cfg.data.get('test_dataloader', {})
     }
+    
+    
 
     rank, _ = get_dist_info()
     # allows not to create
@@ -220,6 +223,7 @@ def main():
 
     # build the dataloader
     cfg.data.test.hf_dataset = args.hf_dataset
+    cfg.data.test.cache_dir = args.cache_dir
     dataset = build_dataset(cfg.data.test)
     data_loader = build_dataloader(dataset, **test_loader_cfg)
 

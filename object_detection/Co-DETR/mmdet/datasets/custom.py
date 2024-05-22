@@ -60,6 +60,7 @@ class CustomDataset(Dataset):
                  ann_file,
                  pipeline,
                  hf_dataset,
+                 cache_dir,
                  classes=None,
                  data_root=None,
                  img_prefix='',
@@ -72,6 +73,7 @@ class CustomDataset(Dataset):
                  ):
         self.ann_file = ann_file
         self.hf_dataset = hf_dataset
+        self.cache_dir = cache_dir
         self.data_root = data_root
         self.img_prefix = img_prefix
         self.seg_prefix = seg_prefix

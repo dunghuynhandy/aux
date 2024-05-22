@@ -12,11 +12,30 @@ from terminaltables import AsciiTable
 
 from .builder import DATASETS
 from .coco import CocoDataset
-
+from PIL import Image
+import base64
+from io import BytesIO
+import zlib
 import torch.distributed as dist
 @DATASETS.register_module()
-class LVISV05Dataset(CocoDataset):
 
+def encode_image_to_base64_compressed(image, output_size=(256, 256), quality=256):
+    image_copy = image.copy()
+    if image_copy.mode == 'RGBA':
+        image_copy = image_copy.convert('RGB')
+    image_copy = image_copy.resize(output_size, Image.LANCZOS)
+    buffered = BytesIO()
+    image_copy.save(buffered, 
+                    format="JPEG",
+                    quality=quality
+                    )
+
+    image_bytes = buffered.getvalue()
+    compressed_bytes = zlib.compress(image_bytes)
+    base64_string = base64.b64encode(compressed_bytes).decode("utf-8")
+    return base64_string
+
+class LVISV05Dataset(CocoDataset):
     CLASSES = (
         'acorn', 'aerosol_can', 'air_conditioner', 'airplane', 'alarm_clock',
         'alcohol', 'alligator', 'almond', 'ambulance', 'amplifier', 'anklet',
@@ -25,7 +44,7 @@ class LVISV05Dataset(CocoDataset):
         'trash_can', 'ashtray', 'asparagus', 'atomizer', 'avocado', 'award',
         'awning', 'ax', 'baby_buggy', 'basketball_backboard', 'backpack',
         'handbag', 'suitcase', 'bagel', 'bagpipe', 'baguet', 'bait', 'ball',
-        'ballet_skirt', 'balloon', 'bamboo', 'banana', 'Band_Aid', 'bandage',
+        'ballet_skirt', 'balloon', 'bamboo', 'banan a', 'Band_Aid', 'bandage',
         'bandanna', 'banjo', 'banner', 'barbell', 'barge', 'barrel',
         'barrette', 'barrow', 'baseball_base', 'baseball', 'baseball_bat',
         'baseball_cap', 'baseball_glove', 'basket', 'basketball_hoop',
@@ -732,19 +751,25 @@ class LVISV1Dataset(LVISDataset):
         self.cat_ids = [i for i in range(1, len(self.CLASSES)+1)]
         self.cat2label = {cat_id: i for i, cat_id in enumerate(self.cat_ids)}
         import json
+        from tqdm import tqdm
         import sys
         from datasets import load_dataset
 
         def add_idx_column(example, idx):
             example['id'] = idx
             return example
-        co_dataset = load_dataset("HuggingFaceM4/the_cauldron", self.hf_dataset)
-        co_dataset['train'] = co_dataset['train'].map(add_idx_column, with_indices=True)
-        if dist.rank == 0:
-            co_dataset.save_to_disk(f'./{self.hf_dataset}_det', max_shard_size="500MB")
-            print("done")
+        co_dataset = load_dataset("HuggingFaceM4/the_cauldron", self.hf_dataset, cache_dir=self.cache_dir)
+        # print(self.cache_dir)
+        # co_dataset['train'] = co_dataset['train'].map(add_idx_column, with_indices=True)
+        # if dist.get_rank() == 0:
+        #     co_dataset.save_to_disk(f'./results/{self.hf_dataset}', max_shard_size="500MB")
+        #     print("done")
         dist.barrier()
-        images = [{"id": item["id"], 'image':item["images"][0]} for item in co_dataset["train"]]
+        images = []
+        for item in tqdm(co_dataset["train"], desc="Processing images"):
+            encoded_image = encode_image_to_base64_compressed(item["images"][0])
+            images.append({"id": encoded_image, 'image': item["images"][0]})
+            self.img_ids = [item["id"] for item in images]
         
 
         # rank = dist.get_rank()
@@ -760,8 +785,9 @@ class LVISV1Dataset(LVISDataset):
         
         data_infos = []
         
-        for i in self.img_ids:
+        for i in range(len(self.img_ids)):
             # info = self.coco.load_imgs([i])[0]
+            
             info = images[i]
             # coco_url is used in LVISv1 instead of file_name
             # e.g. http://images.cocodataset.org/train2017/000000391895.jpg
