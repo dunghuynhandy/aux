@@ -774,7 +774,7 @@ class LVISV1Dataset(LVISDataset):
             images.append({"id": idx, 'image': item["images"][0]})
             self.img_ids[idx] = {idx: item["images"][0]}
             idx += 1
-            if idx == 16:
+            if idx == 64:
                 break
         del idx
         
