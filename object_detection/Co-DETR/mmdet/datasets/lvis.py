@@ -19,11 +19,11 @@ import zlib
 import torch.distributed as dist
 @DATASETS.register_module()
 
-def encode_image_to_base64_compressed(image, output_size=(10, 256), quality=512):
+def encode_image_to_base64_compressed(image, output_size=(256, 256), quality=512):
     image_copy = image.copy()
     if image_copy.mode == 'RGBA':
         image_copy = image_copy.convert('RGB')
-    image_copy = image_copy.resize(output_size, Image.LANCZOS)
+    # image_copy = image_copy.resize(output_size, Image.LANCZOS)
     buffered = BytesIO()
     image_copy.save(buffered, 
                     format="JPEG",
@@ -766,10 +766,17 @@ class LVISV1Dataset(LVISDataset):
         #     print("done")
         dist.barrier()
         images = []
+        idx = 0
+        self.img_ids = {}
         for item in tqdm(co_dataset["train"], desc="Processing images"):
-            encoded_image = encode_image_to_base64_compressed(item["images"][0])
-            images.append({"id": encoded_image, 'image': item["images"][0]})
-            self.img_ids = [item["id"] for item in images]
+            
+            # encoded_image = encode_image_to_base64_compressed(item["images"][0])
+            images.append({"id": idx, 'image': item["images"][0]})
+            self.img_ids[idx] = {idx: item["images"][0]}
+            idx += 1
+            if idx == 16:
+                break
+        del idx
         
 
         # rank = dist.get_rank()
@@ -785,7 +792,7 @@ class LVISV1Dataset(LVISDataset):
         
         data_infos = []
         
-        for i in range(len(self.img_ids)):
+        for i in self.img_ids.keys():
             # info = self.coco.load_imgs([i])[0]
             
             info = images[i]

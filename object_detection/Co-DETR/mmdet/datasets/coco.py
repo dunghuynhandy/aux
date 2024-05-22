@@ -7,7 +7,10 @@ import os.path as osp
 import tempfile
 import warnings
 from collections import OrderedDict
-
+from PIL import Image
+import base64
+from io import BytesIO
+import zlib
 import mmcv
 import numpy as np
 from mmcv.utils import print_log
@@ -18,7 +21,21 @@ from .api_wrappers import COCO, COCOeval
 from .builder import DATASETS
 from .custom import CustomDataset
 
+def encode_image_to_base64_compressed(image, output_size=(256, 256), quality=512):
+    image_copy = image.copy()
+    if image_copy.mode == 'RGBA':
+        image_copy = image_copy.convert('RGB')
+    # image_copy = image_copy.resize(output_size, Image.LANCZOS)
+    buffered = BytesIO()
+    image_copy.save(buffered, 
+                    format="JPEG",
+                    quality=quality
+                    )
 
+    image_bytes = buffered.getvalue()
+    compressed_bytes = zlib.compress(image_bytes)
+    base64_string = base64.b64encode(compressed_bytes).decode("utf-8")
+    return base64_string
 @DATASETS.register_module()
 class CocoDataset(CustomDataset):
 
@@ -248,7 +265,8 @@ class CocoDataset(CustomDataset):
         del i
         json_results = dict()
         for idx in range(len(self)):
-            img_id = self.img_ids[idx]
+            item = self.img_ids[idx]
+            img_id = item[idx]
             result = results[idx]
             data = {"bboxes": [], "scores": [], "labels":[]}
             for label in range(len(result)):
@@ -259,7 +277,7 @@ class CocoDataset(CustomDataset):
                             data['bboxes'].append(bboxes[i][:4].tolist()) #self.xyxy2xywh(bboxes[i])
                             data['scores'].append(float(bboxes[i][4]))
                             data['labels'].append(label_mapping[self.cat_ids[label]-1])
-            json_results[img_id] = data
+            json_results[encode_image_to_base64_compressed(img_id)] = data
         print(f" ====================== {len(self)}::: {len(json_results.keys())} ====================== ")
         """Convert detection results to COCO json style."""
         
