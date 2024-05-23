@@ -1,5 +1,5 @@
 #!/bin/bash
-hf_dataset=${1:-'ai2d'}
+hf_dataset='ai2d'
 
 NNODES=1
 NPROC_PER_NODE=4

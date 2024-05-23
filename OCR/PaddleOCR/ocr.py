@@ -16,6 +16,7 @@ from PIL import Image
 from torch.utils.data.distributed import DistributedSampler
 from datasets import load_from_disk
 import tqdm
+import cv2
 def is_dist_avail_and_initialized():
     if not dist.is_available():
         return False
@@ -53,6 +54,7 @@ def init_distributed_mode(args):
 
 def pil_to_numpy(example):
     example['image'] = example['images'][0]
+    
     del example['images']
     return example
 
@@ -150,6 +152,7 @@ def main(args):
             print(f"[{idx}|{len(dataset_loader)}]")
         for img_id, img in zip(batch_data["ids"], batch_data["images"]):
             image_np = np.array(img)
+            image_np = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
             result = ocr.ocr(image_np, cls=False)[0]
             if result:
                 boxes = [line[0] for line in result]
@@ -178,7 +181,8 @@ def main(args):
         output_path = os.path.join("./ocr_output/",f"results_{args.hf_dataset}.ocr.json") 
         with open(output_path, 'w') as file:
             json.dump(final_result, file)
-    cleanup()
+    print("Done!")
+    raise KeyboardInterrupt("Simulated interruption")
 
 
 if __name__ == '__main__':
