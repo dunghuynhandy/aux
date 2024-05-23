@@ -738,19 +738,18 @@ class LVISV1Dataset(LVISDataset):
         def add_idx_column(example, idx):
             example['id'] = f"{self.hf_dataset}_{idx}"
             return example
-        co_dataset = load_dataset("HuggingFaceM4/the_cauldron", self.hf_dataset, cache_dir = self.cache_dir)
+        co_dataset = load_dataset("HuggingFaceM4/the_cauldron", self.hf_dataset)
         co_dataset['train'] = co_dataset['train'].map(add_idx_column, with_indices=True)
         if dist.get_rank() == 0:
             import os
             custom_dataset_path = os.path.join(self.custom_dataset_save_path, self.hf_dataset)
             co_dataset.save_to_disk(custom_dataset_path, max_shard_size="500MB")
             print("done")
+            quit()
         dist.barrier()
         
         images = []
         for idx, item in tqdm(enumerate(co_dataset["train"]), total=len(co_dataset["train"])):
-            if idx == 256:
-                break
             images.append({"id": idx, "image_id": item["id"], 'image': item["images"][0]})
 
         self.img_ids = [item["id"] for item in images]
