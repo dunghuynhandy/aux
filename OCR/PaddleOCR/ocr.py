@@ -90,6 +90,17 @@ def custom_collate_fn(batch):
         'images': batch_images,
         "ids": batch_ids
     }
+import subprocess
+def kill_train_processes():
+    # Command to find and kill all processes running train.py
+    command = "kill $(ps aux | grep 'run.sh' | grep -v grep | awk '{print $2}')"
+    
+    try:
+        # Run the command
+        subprocess.run(command, shell=True, check=True)
+        print("Processes running train.py have been killed.")
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred: {e}")
 def cleanup():
     # Clean up and destroy the process group
     if dist.is_initialized():
@@ -182,8 +193,6 @@ def main(args):
         with open(output_path, 'w') as file:
             json.dump(final_result, file)
     print("Done!")
-    raise KeyboardInterrupt("Simulated interruption")
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
@@ -198,3 +207,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     main(args)
+    quit()
