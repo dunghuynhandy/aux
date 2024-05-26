@@ -189,7 +189,7 @@ def main(args):
     if rank == 0:
         print("combining results")
         final_result = collect_result(world_size, args.hf_dataset)
-        output_path = os.path.join("./ocr_output/",f"results_{args.hf_dataset}.ocr.json") 
+        output_path = os.path.join("./ocr_output/",f"{args.hf_dataset}_ocr.json") 
         with open(output_path, 'w') as file:
             json.dump(final_result, file)
     print("Done!")

@@ -768,7 +768,7 @@ class LVISV1Dataset(LVISDataset):
         data_infos = []
         
         for i in self.img_ids:
-            # info = self.coco.load_imgs([i])[0]
+            # info = self.coco.load_imgs([i])[0]`1`
             info = images[i]
             # coco_url is used in LVISv1 instead of file_name
             # e.g. http://images.cocodataset.org/train2017/000000391895.jpg
